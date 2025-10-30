@@ -18,12 +18,7 @@ services:
 
   # ---------- svc-analysis-orchestrator ----------
   svc-analysis-orchestrator:
-    # In prod
     image: ghcr.io/team-2-devs/svc-analysis-orchestrator:latest
-    # In dev
-    # build:
-    #   context: ../svc-analysis-orchestrator
-    #   dockerfile: Dockerfile
     restart: always
     depends_on:
       rabbitmq:
@@ -42,12 +37,7 @@ services:
 
   # ---------- graph-gateway ----------
   graph-gateway:
-    # In prod
     image: ghcr.io/team-2-devs/graph-gateway:latest
-    # In dev
-    # build:
-    #   context: ../graph-gateway
-    #   dockerfile: Dockerfile
     restart: always
     depends_on:
       rabbitmq:

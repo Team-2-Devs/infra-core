@@ -23,7 +23,6 @@ services:
           - name: rate-limiting
             config:
               second: 5
-              # policy: local
               minute: 60
               policy: redis # consistent rate-limits globally
               redis_host: redis
