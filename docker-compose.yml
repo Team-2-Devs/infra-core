@@ -54,6 +54,8 @@ services:
       DOTNET_ENVIRONMENT: Development
       Logging__LogLevel__Default: Information
       Logging__LogLevel__Microsoft.Hosting.Lifetime: Information
+    ports:
+      - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 5s
