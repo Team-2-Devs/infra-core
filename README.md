@@ -131,7 +131,6 @@ cp .env.template .env
 3. **Run the console client** (from host):
    From the `client-console` repository root:
    ```bash
-   cd client-console
    dotnet run
    ```
    - Follow the MSAL device-code prompt.
