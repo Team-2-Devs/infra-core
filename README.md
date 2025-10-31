@@ -45,7 +45,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 ```text
                     ┌──────────────────────┐
                     │     ClientConsole    │
-                    │  (console app)       │
+                    │     (console app)    │
                     └───────────┬──────────┘
                                 │ HTTP/WS :8000 (GraphQL)
                                 ▼
