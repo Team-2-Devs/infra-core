@@ -62,7 +62,7 @@ Mobile application that uses AI to recognize construction machinery from images 
                     │ (JWT validation via OIDC) │
                     └─────────┬─────────────────┘
         HTTP :8080 (internal) │ ↑ 
-      foward mutation request │ ╎ publish subscription events via WebSocket :8000
+     receive mutation request │ ╎ publish subscription events via WebSocket :8000
        requestAnalysis(input) ↓ ╎ (AnalysisStarted / AnalysisCompleted)
                  ┌──────────────┴────────────────┐
                  │        GraphGateway           │
