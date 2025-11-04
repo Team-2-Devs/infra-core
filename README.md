@@ -3,7 +3,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 
 ---
 
-## Overview
+## System Overview
 
 ### Core Services
 
