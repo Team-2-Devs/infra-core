@@ -118,7 +118,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 4. **GraphGateway** receives the mutation, generates a `CorrelationId`, and returns it as `AnalysisRequestPayload(correlationId)` in the mutation payload.  
 5. **GraphGateway** publishes a `RequestAnalysis` command to RabbitMQ (exchange: `analysis.commands`, routing key: `analysis.request`).  
 6. **SvcAnalysisOrchestrator** consumes the `RequestAnalysis` command from its queue (orchestrator.analysis.commands) and simulates processing.  
-7. As work progresses, the orchestrator publishes **events**:  
+7. As work progresses, the orchestrator publishes events:  
     - `AnalysisStarted` to the **analysis.started** fanout exchange.  
     - `AnalysisCompleted` to the **analysis.completed** fanout exchange.  
 8. **GraphGateway** listens to those event exchanges and bridges them to GraphQL subscriptions:  
