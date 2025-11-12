@@ -7,7 +7,7 @@ upstreams:
         weight: 100
 
 services:
-  # Auth-guarded GraphQl via oauth2-proxy → teaapi
+  # Auth-guarded GraphQl via oauth2-proxy → graph-gateway
   - name: graph-gateway
     host: graph-gateway-auth-upstream
     protocol: http
