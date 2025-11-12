@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: graph-gateway
-  # namespace: graph-gateway
+  namespace: graph-gateway
   labels:
     app: graph-gateway
 spec:

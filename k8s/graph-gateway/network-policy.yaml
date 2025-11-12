@@ -18,6 +18,12 @@ spec:
         podSelector:
           matchLabels:
             app: oauth2-proxy
+      - namespaceSelector:
+          matchLabels:
+            name: api-gateway
+        podSelector:
+          matchLabels:
+            app: kong
       ports:
         - protocol: TCP
           port: 8080
