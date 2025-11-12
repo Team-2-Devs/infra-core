@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-analysis-orchestrator
+  # namespace: svc-analysis-orchestrator
+  labels:
+    app: svc-analysis-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc-analysis-orchestrator
+  template:
+    metadata:
+      labels:
+        app: svc-analysis-orchestrator
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+      - name: svc-analysis-orchestrator
+        image: ghcr.io/team-2-devs/svc-analysis-orchestrator:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: svc-analysis-orchestrator-secret
+        readinessProbe:
+          httpGet:
+            path: health/ready
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: health/live
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-gateway
+  # namespace: graph-gateway
+  labels:
+    app: graph-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graph-gateway
+  template:
+    metadata:
+      labels:
+        app: graph-gateway
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+      - name: graph-gateway
+        image: ghcr.io/team-2-devs/graph-gateway:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: graph-gateway-secret
+        readinessProbe:
+          httpGet:
+            path: health/ready
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: health/live
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
