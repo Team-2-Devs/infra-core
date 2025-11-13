@@ -15,10 +15,10 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
-          name: messaging
+          kubernetes.io/metadata.name: messaging
       podSelector:
         matchLabels:
-          app: rabbitmq
+          app.kubernetes.io/name: rabbitmq
     ports:
     - protocol: TCP
       port: 5672

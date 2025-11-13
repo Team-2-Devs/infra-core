@@ -30,6 +30,16 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
+          name: graph-gateway
+      podSelector:
+        matchLabels:
+          app: graph-gateway
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - namespaceSelector:
+        matchLabels:
           kubernetes.io/metadata.name: kube-system
     ports:
     - protocol: TCP
