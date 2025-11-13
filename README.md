@@ -276,10 +276,11 @@ If values and secrets are not yet created:
    ```bash
    kubectl get pods -A
    ```
-10. Make kong LoadBalancer accessible from outside the node:
+10. Open a new terminal at the project root and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
+    This assigns an external IP to the Kong LoadBalancer service that allows it to be accessed from outside the Kubernetes cluster.
 
 **Cleanup:**
 Remove the kind cluster:
