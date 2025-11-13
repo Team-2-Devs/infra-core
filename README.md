@@ -280,7 +280,7 @@ If values and secrets are not yet created:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
-    This assigns an external IP to the Kong LoadBalancer service so it can be accessed from outside the Kubernetes cluster.
+    This assigns an external IP to the Kong LoadBalancer service that allows it to be accessed from outside the Kubernetes cluster.
 
 **Cleanup:**
 Remove the kind cluster:
