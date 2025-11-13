@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kong
+  namespace: api-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: kong
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+    - ports:
+      - protocol: TCP
+        port: 8000 # HTTP
+      - protocol: TCP
+        port: 8443 # HTTPS
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: api-gateway
+      podSelector:
+        matchLabels:
+          app: oauth2-proxy
+    ports:
+    - protocol: TCP
+      port: 4180
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: graph-gateway
+      podSelector:
+        matchLabels:
+          app: graph-gateway
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

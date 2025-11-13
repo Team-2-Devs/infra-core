@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rabbitmq
+  namespace: messaging
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: graph-gateway
+          podSelector:
+            matchLabels:
+              app: graph-gateway
+        - namespaceSelector:
+            matchLabels:
+              name: svc-analysis-orchestrator
+          podSelector:
+            matchLabels:
+              app: svc-analysis-orchestrator
+      ports:
+        - protocol: TCP
+          port: 5672
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

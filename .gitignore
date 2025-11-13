@@ -43,3 +43,8 @@ docker-compose.*.local.yml
 *.crt
 *.csr
 secrets/
+*secret.yaml
+kong.yaml
+oauth2-proxy.yaml
+rabbitmq.yaml
+values.yaml
