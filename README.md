@@ -33,11 +33,11 @@ Mobile application that uses AI to recognize construction machinery from images 
 - **RabbitMQ**  
   Message broker for asynchronous communication.
 
----
+<!-- ---
 
 ## Codebase Architecture
 
-![Codebase Diagram](docs/images/codebase-architecture.jpg)
+![Codebase Diagram](docs/images/codebase-architecture.jpg) -->
 
 ---
 
@@ -129,39 +129,173 @@ Mobile application that uses AI to recognize construction machinery from images 
 ---
 
 ## Configuration
+If values and secrets are not yet created:
+1. Navigate to `infra-core/k8s`.  
+2. Download `generate-secrets-and-values.sh` to that directory.  
+3. Run:
+   ```bash
+   bash generate-secrets-and-values.sh
+   ```
 
-All sensitive values come from **environment variables** (via `.env`).  
-Copy the provided `.env.template` to `.env` and fill in the values:
+## Environment Setup
+**Windows:**
+1. Install WSL (if you don't already have it):
+   ```bash
+   wsl --install -d Ubuntu
+   ```
+   Run all following commands inside WSL (Ubuntu). Start it by running wsl in PowerShell.
+2. Install kind, kubectl, and helm:
+   ```bash
+   curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64
+   chmod +x ./kind
+   sudo mv ./kind /usr/local/bin/kind
+   ```
+   ```bash
+   curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
+   chmod +x kubectl
+   sudo mv kubectl /usr/local/bin/kubectl
+   ```
+   ```bash
+   curl -LO https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz
+   tar -xf helm-v3.15.2-linux-amd64.tar.gz
+   sudo mv linux-amd64/helm /usr/local/bin/helm
+   ```
+3. Add kong and oauth2-proxy helm charts to helm repo:
+   ```bash
+   helm repo add kong https://charts.konghq.com
+   ```
+   ```bash
+   helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+   ```
 
+**MacOS:**
+1. Install Homebrew (if you don't already have it):
+2. Install kind, kubectl, and helm:
+   ```bash
+   brew install kind
+   brew install kubectl
+   brew install helm
+   ```
+3. Add kong and oauth2-proxy helm charts to helm repo:
+   ```bash
+   helm repo add kong https://charts.konghq.com
+   ```
+   ```bash
+   helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+   ```
+4. Install Go:
+   ```bash
+   brew install go
+   ```
+5. Install cloud-provider-kind:
+   ```bash
+   go install sigs.k8s.io/cloud-provider-kind@latest
+   ```
+6. Move cloud-provider-kind to /usr/local/bin for global use:
+   ```bash
+   sudo mv ~/go/bin/cloud-provider-kind /usr/local/bin/cloud-provider-kind
+   ```
+
+---
+
+## Run Kubernetes Cluster Locally
+**Windows:**
+1. Ensure Docker Desktop is running.  
+2. Determine the path to `infra-core/k8s`. You will need this when switching into WSL.  
+3. Open PowerShell and start WASL:
+   ```bash
+   wsl
+   ```
+   All remaining commands must be executed inside the WSL terminal.  
+4. Navigate to the `infra-core/k8s` directory inside WSL:
+   ```bash
+   cd "/mnt/<drive>/<path>/infra-core/k8s"
+   ```
+5. Create the Kubernetes cluster:
+   ```bash
+   kind create cluster --config kind-calico.yaml
+   ```
+6. Apply the calico CNI manifest:
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
+   ```
+7. Install required Helm charts:
+   ```bash
+   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
+   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
+   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
+   ```
+8. Apply local manifests:
+   ```bash
+   kubectl apply -f helm/oauth2-proxy/secret.yaml  
+   kubectl apply -f helm/rabbitmq/network-policy.yaml  
+   kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
+   kubectl apply -f helm/kong/network-policy.yaml  
+   kubectl apply -f graph-gateway
+   kubectl apply -f svc-analysis-orchestrator
+   ```
+   *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
+9. Verify that all pods are running:
+   ```bash
+   kubectl get pods -A
+   ```
+10. Port-forward Kong to your local machine:
+    ```bash
+    kubectl port-forward -n api-gateway svc/kong-proxy 8080:80
+    ```
+    This makes Kong accessible at `http://localhost:8080` on your Windows machine, even though Kong is running inside the Kubernetes cluster.
+
+**MacOS:**
+1. Ensure Docker Desktop is running.  
+2. Navigate to the `infra-core/k8s` directory.  
+3. Create the Kubernetes cluster:
+   ```bash
+   kind create cluster --config kind-calico.yaml
+   ```
+4. Apply the calico CNI manifest:
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
+   ```
+7. Install required Helm charts:
+   ```bash
+   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
+   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
+   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
+   ```
+8. Apply local manifests:
+   ```bash
+   kubectl apply -f helm/oauth2-proxy/secret.yaml  
+   kubectl apply -f helm/rabbitmq/network-policy.yaml  
+   kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
+   kubectl apply -f helm/kong/network-policy.yaml  
+   kubectl apply -f graph-gateway
+   kubectl apply -f svc-analysis-orchestrator
+   ```
+   *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
+9. Verify that all pods are running:
+   ```bash
+   kubectl get pods -A
+   ```
+10. Make kong LoadBalancer accessible from outside the node:
+    ```bash
+    sudo go/bin/cloud-provider-kind
+    ```
+
+**Cleanup:**
+Remove the kind cluster:
 ```bash
-cp .env.template .env
+kind delete cluster
 ```
 
 ---
 
-## Run Locally
-
-1. **Build & start** the stack:
-   From the **infra-core** repository root:
-   ```bash
-   docker compose up -d --build
-   ```
-
-2. **Health checks**:
-   - **RabbitMQ UI:** http://localhost:15672 (user/pass from `.env`)
-   - **Kong:** http://localhost:8000
-   - **oauth2-proxy ping:** http://127.0.0.1:4180/ping (should return “OK”)
-   - **GraphGateway:**
-     - GraphQL: http://localhost:8090/graphql
-     - Health: http://localhost:8090/health/ready
-   
-3. **Run the console client** (from host):
-   From the `client-console` repository root:
-   ```bash
-   dotnet run
-   ```
-   - Follow the MSAL device-code prompt.
-   - Use the console to request an analysis and observe live updates.
+## Run Console Client
+From the `client-console` repository root:
+```bash
+dotnet run
+```
+- Follow the MSAL device-code prompt.
+- Use the console to request an analysis and observe live updates.
 
 ---
 
@@ -236,4 +370,4 @@ input AnalysisRequestInput {
 - **Kong (OSS)** in **db-less** mode
 - **oauth2-proxy** for JWT validation at the edge
 - **Microsoft Entra ID** via **MSAL (device code flow)**
-- **Docker / Docker Compose** for local orchestration
+<!-- - **Docker / Docker Compose** for local orchestration -->
