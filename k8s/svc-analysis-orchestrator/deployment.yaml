@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
       - name: svc-analysis-orchestrator
-        image: ghcr.io/team-2-devs/svc-analysis-orchestrator:latest
+        image: ghcr.io/team-2-devs/svc-analysis-orchestrator:13
         ports:
         - containerPort: 8080
         envFrom:
