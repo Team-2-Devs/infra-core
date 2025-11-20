@@ -24,6 +24,8 @@ spec:
           podSelector:
             matchLabels:
               app: svc-analysis-orchestrator
+        - ipBlock:
+          cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
           port: 5672

@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: graph-gateway
-  namespace: graph-gateway
+  name: svc-messaging-bridge
+  namespace: svc-messaging-bridge
   labels:
-    app: graph-gateway
+    app: svc-messaging-bridge
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: graph-gateway
+      app: svc-messaging-bridge
   template:
     metadata:
       labels:
-        app: graph-gateway
+        app: svc-messaging-bridge
     spec:
       terminationGracePeriodSeconds: 20
       containers:
-      - name: graph-gateway
-        image: ghcr.io/team-2-devs/graph-gateway:21
+      - name: svc-messaging-bridge
+        image: ghcr.io/team-2-devs/svc-messaging-bridge:3
         ports:
         - containerPort: 8080
         envFrom:
         - secretRef:
-            name: graph-gateway-secret
+            name: svc-messaging-bridge-secret
         readinessProbe:
           httpGet:
             path: health/ready

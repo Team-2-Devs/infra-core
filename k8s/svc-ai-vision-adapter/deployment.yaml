@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-ai-vision-adapter
+  namespace: svc-ai-vision-adapter
+  labels:
+    app: svc-ai-vision-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc-ai-vision-adapter
+  template:
+    metadata:
+      labels:
+        app: svc-ai-vision-adapter
+    spec:
+      terminationGracePeriodSeconds: 20
+      imagePullSecrets:
+        - name: ghcr-creds
+      containers:
+      - name: svc-ai-vision-adapter
+        image: ghcr.io/team-2-devs/svc-ai-vision-adapter:3
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: svc-ai-vision-adapter-secret
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/service-account.json
+        volumeMounts:
+        - name: google-creds
+          mountPath: /var/secrets/google
+          readOnly: true
+      volumes:
+      - name: google-creds
+        secret:
+          secretName: svc-ai-vision-adapter-secret
+        # readinessProbe:
+        #   httpGet:
+        #     path: health/ready
+        #     port: 8080
+        #   periodSeconds: 5
+        #   timeoutSeconds: 3
+        #   failureThreshold: 30
+        # livenessProbe:
+        #   httpGet:
+        #     path: health/live
+        #     port: 8080
+        #   periodSeconds: 5
+        #   timeoutSeconds: 3
+        #   failureThreshold: 30
