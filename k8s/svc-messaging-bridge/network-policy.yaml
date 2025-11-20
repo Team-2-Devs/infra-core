@@ -1,26 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: graph-gateway
-  namespace: graph-gateway
+  name: svc-messaging-bridge
+  namespace: svc-messaging-bridge
 spec:
   podSelector:
     matchLabels:
-      app: graph-gateway
+      app: svc-messaging-bridge
   policyTypes:
   - Ingress
   - Egress
-  ingress:
-    - from:
-      - namespaceSelector:
-          matchLabels:
-            kubernetes.io/metadata.name: api-gateway
-        podSelector:
-          matchLabels:
-            app.kubernetes.io/name: oauth2-proxy
-      ports:
-        - protocol: TCP
-          port: 8080
+  ingress: [] # denies ingress
   egress:
   - to:
     - namespaceSelector:
@@ -43,9 +33,7 @@ spec:
       port: 53
   - to:
     - ipBlock:
-        cidr: 0.0.0.0/0
+        cidr: 100.106.102.107/32
     ports:
-      - protocol: TCP
-        port: 443
-      - protocol: TCP
-        port: 5104
+    - protocol: TCP
+      port: 9092
