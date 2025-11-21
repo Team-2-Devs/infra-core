@@ -282,8 +282,8 @@ If values and secrets are not yet created:
    - "5136:9080" # previously 5136:8080
    ```
 3. In appsettings.Development.json:
-   ```json
-   "BaseUrl": "http://localhost:9080" // previously :8080
+   ```yaml
+   "BaseUrl": "http://localhost:9080" # previously :8080
    ```
 4. Create `.env` at repo root:
    ```yaml
@@ -359,23 +359,23 @@ If values and secrets are not yet created:
 
 **svc-ai-vision-adapter**  
 1. In `launchsettings.json`:
-   ```json
+   ```yaml
    "environmentVariables": {
-      "ASPNETCORE_HTTPS_PORTS": "9081", // previously 8081
-      "ASPNETCORE_HTTP_PORTS": "9080" // previously 8080
+      "ASPNETCORE_HTTPS_PORTS": "9081", # previously 8081
+      "ASPNETCORE_HTTP_PORTS": "9080" # previously 8080
    },
    ```
 2. In `appsettings.json`:
-   ```json
+   ```yaml
    "Kafka": {
       "Consumer": {
-         "BootstrapServers": "100.106.102.107:9092", // insert personal tailscale IP
+         "BootstrapServers": "100.106.102.107:9092", # insert personal tailscale IP
          "GroupId": "svc-ai-vision-adapter",
          "Topic": "tu.images.uploaded",
          "EnableAutoCommit": true
       },
       "Producer": {
-         "BootstrapServers": "100.106.102.107:9092", // insert personal tailscale IP
+         "BootstrapServers": "100.106.102.107:9092", # insert personal tailscale IP
          "Topic": "tu.recognition.completed",
          "Acks": "All",
          "MessageSendMaxRetries": 3
