@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: svc-ai-vision-adapter
-  labels:
-    name: svc-ai-vision-adapter
