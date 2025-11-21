@@ -137,6 +137,8 @@ If values and secrets are not yet created:
    bash generate-secrets-and-values.sh
    ```
 
+--
+
 ## Environment Setup
 **Windows:**
 1. Install WSL (if you don't already have it):
@@ -198,6 +200,208 @@ If values and secrets are not yet created:
 
 ---
 
+## Configure Tailscale & Redpanda
+1. Install:
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   ```
+2. Run:
+   ```bash
+   sudo tailscale up
+   ```
+3. Find personal tailscale IP. This is used in place of 100.106.102.107 in all configurations below.
+4. Configure Redpanda:
+   ```bash
+   docker run -d --name=redpanda -p 9092:9092 -p 9644:9644 -v redpanda-data:/var/lib/redpanda/data docker.redpanda.com/redpandadata/redpanda:latest redpanda start --overprovisioned --smp 1 --memory 1G --kafka-addr internal://0.0.0.0:9092 --advertise-kafka-addr internal://100.106.102.107:9092
+   ```
+5. Enter Redpanda container:  
+   Windows:
+   ```bash
+   docker exec -it redpanda /bin/bash
+   ```
+   MacOS:
+   ```bash
+   docker exec -it bash
+   ```
+6. Inside Redpanda container, create kafka topics:
+   ```bash
+   rpk topic create tu.images.uploaded --partitions 4 --replicas 1  
+   rpk topic create tu.recognition.completed --partitions 4 --replicas 1  
+   ```
+7. Exit Redpanda container
+8. Create tailscale funnel:
+   ```bash
+   tailscale funnel 5104
+   ```
+   Copy https://<address>.ts.net for later. Let funnel run in the background.
+
+---
+
+## Configure Services
+**infra-core/k8s/graph-gateway/secret.yaml**  
+1. Decide value in place of `changeme` and keep it consistent for all future `.env` files:
+   ```yaml
+   INTERNAL_AUTH_API_KEY: changeme  
+   INGESTION_BASE_URL: "https://<something>.ts.net" # insert funnel address
+   ```
+
+**svc-messaging-bridge**  
+1. Create `.env` at repo root:
+   ```yaml
+   RABBIT_HOST=localhost
+   RABBIT_USER=graph
+   RABBIT_PASS="<rabbit-password>" # insert rabbitmq password
+   RABBIT_PORT=5672
+   KAFKA_BROKERS=100.106.102.107:9092 # insert personal tailscale IP
+   ```
+2. Create GitHub token:  
+   a. GitHub → Profile → Settings  
+   b. Developer settings → Personal access token → Tokens (classic)  
+   c. Generate new token → Generate new token (classic)  
+   d. Give the token a name and check read:packages  
+   e. Click generate and copy token  
+3. Run:
+   ```bash
+   dotnet nuget add source "https://nuget.pkg.github.com/team-2-devs/index.json" --name "github" --username <github-username> --password <token> --store-password-in-clear-text
+   ```
+4. Run:
+   ```bash
+   dotnet restore
+   ```
+
+**tu-media-access-service**  
+1. In `Dockerfile`:  
+   ```yaml
+   ENV ASPNETCORE_URLS=http://+:9080 # previously not defined
+
+   EXPOSE 9080 # previously 8080
+   ```
+2. In `docker-compose.yml`:
+   ```yaml
+   ports:
+   - "5136:9080" # previously 5136:8080
+   ```
+3. In appsettings.Development.json:
+   ```json
+   "BaseUrl": "http://localhost:9080" // previously :8080
+   ```
+4. Create `.env` at repo root:
+   ```yaml
+   INTERNAL_AUTH_API_KEY=changeme
+   STORAGE_BASE_URL=http://host.docker.internal:9080 # previously :8080
+   ```
+
+**tu-storage-service**  
+1. In `Dockerfile`:
+   ```yaml
+   ENV ASPNETCORE_URLS=http://+:9080 # previously 8080
+
+   EXPOSE 9080 # previously 8080
+   ```
+2. In `docker-compose.yml`:
+   ```yaml
+   ports:
+   - "9080:9080" # previously 8080:8080
+   ```
+3. Create `.env` at repo root:
+   ```yaml
+   MINIO_ROOT_USER=minioadmin
+   MINIO_ROOT_PASSWORD=minioadmin
+
+   INTERNAL_AUTH_API_KEY=changeme
+   ```
+
+**tu-ingestion-service**  
+1. In `Dockerfile`:
+   ```yaml
+   ENV ASPNETCORE_URLS=http://+:9080 # previously 8080
+
+   EXPOSE 9080 # previously 8080
+   ```
+2. In `docker-compose.yml`:
+   ```yaml
+   ports:
+   - "9090:9080" # previously 8090:8080
+   ```
+3. In `appsettings.Development.json`:
+   ```yaml
+   "Messaging": {
+      "Producer": "ingestion",
+      "Redpanda": {
+         "BootstrapServers": "100.106.102.107:9092" # insert personal tailscale IP 
+   }
+
+   "Storage": {
+      "BaseUrl": "http://localhost:9080", # previously :8080
+      "InternalAccess": "changeme" # previously placeholder
+   }
+   ```
+4. Create `.env` at repo root:
+   ```yaml
+   REDPANDA_BOOTSTRAP_SERVERS=100.106.102.107:9092 # insert personal tailscale IP
+   INTERNAL_AUTH_API_KEY=changeme
+   STORAGE_BASE_URL=http://host.docker.internal:9080 # previously :8080
+   ```
+5. In `Ingestion.Api.csproj`, add DotNetEnv package:
+   ```csharp
+   <PackageReference Include="DotNetEnv" Version="3.1.1" />
+   ```
+6. In the beginning of `Program.cs`, add:
+   ```csharp
+   using DotNetEnv;
+
+   Env.Load();
+   ```
+7. In repo root, run:
+   ```bash
+   mkdir .local/ingestion/
+   ```
+
+**svc-ai-vision-adapter**  
+1. In `launchsettings.json`:
+   ```json
+   "environmentVariables": {
+      "ASPNETCORE_HTTPS_PORTS": "9081", // previously 8081
+      "ASPNETCORE_HTTP_PORTS": "9080" // previously 8080
+   },
+   ```
+2. In `appsettings.json`:
+   ```json
+   "Kafka": {
+      "Consumer": {
+         "BootstrapServers": "100.106.102.107:9092", // insert personal tailscale IP
+         "GroupId": "svc-ai-vision-adapter",
+         "Topic": "tu.images.uploaded",
+         "EnableAutoCommit": true
+      },
+      "Producer": {
+         "BootstrapServers": "100.106.102.107:9092", // insert personal tailscale IP
+         "Topic": "tu.recognition.completed",
+         "Acks": "All",
+         "MessageSendMaxRetries": 3
+      }
+   ```
+3. In `Program.cs` (do not push this with the real X-Internal-Access value):
+   ```csharp
+   builder.Services.AddHttpClient<IImageUrlFetcher, HttpImageUrlFetcher>(client =>
+   {
+      client.BaseAddress = new Uri("http://localhost:5136");
+      client.DefaultRequestHeaders.Add("X-Internal-Access", "changeme");
+   });
+   ```
+4. In `.gitignore`:
+   ```yaml
+   service-account.json
+   ```
+5. Windows only: Open git bash to run command below.  
+6. Copy secret sent through [onetimesecret]https://eu.onetimesecret.com/ and insert in command below.
+7. Go to `svc-ai-vision-adapter`-folder and run:
+   ```bash
+   echo '<secret>' \  | base64 -d > service-account.json
+   ```
+
+---
+
 ## Run Kubernetes Cluster Locally
 **Windows:**
 1. Ensure Docker Desktop is running.  
@@ -229,6 +433,7 @@ If values and secrets are not yet created:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
+   kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
    kubectl apply -f graph-gateway
@@ -244,6 +449,11 @@ If values and secrets are not yet created:
     kubectl port-forward -n api-gateway svc/kong-proxy 8080:80
     ```
     This makes Kong accessible at `http://localhost:8080` on your Windows machine, even though Kong is running inside the Kubernetes cluster.
+
+11. Port-forward rabbitmq nodeport in another terminal, also at infra-core/k8s:
+    ```bash
+    kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
+    ```
 
 **MacOS:**
 1. Ensure Docker Desktop is running.  
@@ -266,6 +476,7 @@ If values and secrets are not yet created:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
+   kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
    kubectl apply -f graph-gateway
@@ -276,7 +487,11 @@ If values and secrets are not yet created:
    ```bash
    kubectl get pods -A
    ```
-10. Open a new terminal at the project root and start cloud-provider-kind:
+10. Port-forward rabbitmq nodeport:
+    ```bash
+    kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
+    ```
+11. Open a new terminal at the project root and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
@@ -287,6 +502,53 @@ Remove the kind cluster:
 ```bash
 kind delete cluster
 ```
+
+---
+
+## Run Services Outside Kubernetes
+**svc-ai-vision-adapter**  
+1. Go to `svc-ai-vision-adapter`-folder and run:
+   Windows:
+   ```bash
+   $env:GOOGLE_APPLICATION_CREDENTIALS = "$PWD\service-account.json"
+   dotnet run
+   ```
+   MacOS:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS=service-account.json                                  
+   dotnet run
+   ```
+
+**tu-media-access-service**  
+1. At repo root, run:
+   ```bash
+   docker compose up -d
+   ```
+
+**tu-storage-service**  
+1. At repo root, run:
+   ```bash
+   docker compose up -d
+   ```
+
+**minIO**  
+Access:  
+- URL: http://localhost:9001
+- Username: `minioadmin`
+- Password: `minioadmin`
+Default bucket: `trackunit-images` (create it once if missing)
+
+**tu-ingestion-service**
+1. Go to `src/Ingestion.Api` and run:
+   ```bash
+   dotnet run
+   ```
+
+**svc-messaging-bridge**
+1. At repo root, run:
+   ```bash
+   dotnet run
+   ```
 
 ---
 
