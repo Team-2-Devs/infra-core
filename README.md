@@ -429,28 +429,32 @@ If values and secrets are not yet created:
    helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
    helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
    ```
-8. Apply local manifests:
+8. Ensure all pods are running before proceeding:
+   ```bash
+   kubectl get pods -A --watch
+   ```
+9. Apply local manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
-   kubectl apply -f graph-gateway
+   kubectl apply -f graph-gateway  
    kubectl apply -f svc-analysis-orchestrator
    ```
    *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
-9. Verify that all pods are running:
+10. Verify that all pods are running:
    ```bash
    kubectl get pods -A
    ```
-10. Port-forward Kong to your local machine:
+11. Port-forward Kong to your local machine:
     ```bash
     kubectl port-forward -n api-gateway svc/kong-proxy 8080:80
     ```
     This makes Kong accessible at `http://localhost:8080` on your Windows machine, even though Kong is running inside the Kubernetes cluster.
 
-11. Port-forward rabbitmq nodeport in another terminal, also at infra-core/k8s:
+12. Port-forward rabbitmq nodeport in another terminal, also at infra-core/k8s:
     ```bash
     kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
     ```
@@ -472,7 +476,11 @@ If values and secrets are not yet created:
    helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
    helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
    ```
-8. Apply local manifests:
+8. Ensure all pods are running before proceeding:
+   ```bash
+   kubectl get pods -A --watch
+   ```
+9. Apply local manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
@@ -483,15 +491,15 @@ If values and secrets are not yet created:
    kubectl apply -f svc-analysis-orchestrator
    ```
    *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
-9. Verify that all pods are running:
+10. Verify that all pods are running:
    ```bash
    kubectl get pods -A
    ```
-10. Port-forward rabbitmq nodeport:
+11. Port-forward rabbitmq nodeport:
     ```bash
     kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
     ```
-11. Open a new terminal at the project root and start cloud-provider-kind:
+12. Open a new terminal at the project root and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
@@ -506,8 +514,10 @@ kind delete cluster
 ---
 
 ## Run Services Outside Kubernetes
+>Note: On Windows, all commands below should be run inside WSL.
+
 **svc-ai-vision-adapter**  
-1. Go to `svc-ai-vision-adapter`-folder and run:
+1. Go to `svc-ai-vision-adapter`-folder and run:  
    Windows:
    ```bash
    $env:GOOGLE_APPLICATION_CREDENTIALS = "$PWD\service-account.json"

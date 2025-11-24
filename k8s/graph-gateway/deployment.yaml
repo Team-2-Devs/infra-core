@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
       - name: graph-gateway
-        image: ghcr.io/team-2-devs/graph-gateway:22
+        image: ghcr.io/team-2-devs/graph-gateway:24
         ports:
         - containerPort: 8080
         envFrom:
