@@ -423,31 +423,30 @@ If values and secrets are not yet created:
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
    ```
-7. Install required Helm charts:
-   ```bash
-   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
-   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
-   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
-   ```
-8. Ensure all pods are running before proceeding:
-   ```bash
-   kubectl get pods -A --watch
-   ```
-9. Apply local manifests:
+7. Apply foundational manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
-   kubectl apply -f graph-gateway  
+   ```
+8. Install required Helm charts:
+   ```bash
+   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
+   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
+   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
+   ```
+9. Apply application manifests:
+   ```bash
+   kubectl apply -f graph-gateway
    kubectl apply -f svc-analysis-orchestrator
    ```
-   *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
+   *If errors occur here, simply run these two commands again. Sometimes manifests are applied out of order, so dependent resources may not exist the first time.*
 10. Verify that all pods are running:
-   ```bash
-   kubectl get pods -A
-   ```
+    ```bash
+    kubectl get pods -A
+    ```
 11. Port-forward Kong to your local machine:
     ```bash
     kubectl port-forward -n api-gateway svc/kong-proxy 8080:80
@@ -470,36 +469,35 @@ If values and secrets are not yet created:
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
    ```
-7. Install required Helm charts:
-   ```bash
-   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
-   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
-   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
-   ```
-8. Ensure all pods are running before proceeding:
-   ```bash
-   kubectl get pods -A --watch
-   ```
-9. Apply local manifests:
+5. Apply foundational manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
+   ```
+6. Install required Helm charts:
+   ```bash
+   helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
+   helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
+   helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
+   ```
+7. Apply application manifests:
+   ```bash
    kubectl apply -f graph-gateway
    kubectl apply -f svc-analysis-orchestrator
    ```
-   *If errors occur in the last two commands, simply run them again. Sometimes manifests are applied out of order, causing temporary startup errors.*
-10. Verify that all pods are running:
+   *If errors occur here, simply run these two commands again. Sometimes manifests are applied out of order, so dependent resources may not exist the first time.*
+8. Verify that all pods are running:
    ```bash
    kubectl get pods -A
    ```
-11. Port-forward rabbitmq nodeport:
-    ```bash
-    kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
-    ```
-12. Open a new terminal at the project root and start cloud-provider-kind:
+9. Port-forward rabbitmq nodeport:
+   ```bash
+   kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
+   ```
+10. Open a new terminal at the project root and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
@@ -514,10 +512,8 @@ kind delete cluster
 ---
 
 ## Run Services Outside Kubernetes
->Note: On Windows, all commands below should be run inside WSL.
-
 **svc-ai-vision-adapter**  
-1. Go to `svc-ai-vision-adapter`-folder and run:  
+1. Go to `svc-ai-vision-adapter`-folder and run:
    Windows:
    ```bash
    $env:GOOGLE_APPLICATION_CREDENTIALS = "$PWD\service-account.json"
