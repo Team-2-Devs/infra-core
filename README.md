@@ -394,7 +394,7 @@ If values and secrets are not yet created:
    service-account.json
    ```
 5. Windows only: Open git bash to run command below.  
-6. Copy secret sent through [onetimesecret]https://eu.onetimesecret.com/ and insert in command below.
+6. Copy secret sent through https://eu.onetimesecret.com/ and insert in command below.
 7. Go to `svc-ai-vision-adapter`-folder and run:
    ```bash
    echo '<secret>' \  | base64 -d > service-account.json
