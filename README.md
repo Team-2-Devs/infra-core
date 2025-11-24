@@ -507,7 +507,7 @@ kind delete cluster
 
 ## Run Services Outside Kubernetes
 **svc-ai-vision-adapter**  
-1. Go to `svc-ai-vision-adapter`-folder and run:
+1. Go to `svc-ai-vision-adapter`-folder and run:  
    Windows:
    ```bash
    $env:GOOGLE_APPLICATION_CREDENTIALS = "$PWD\service-account.json"

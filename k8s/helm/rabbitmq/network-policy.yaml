@@ -25,7 +25,7 @@ spec:
             matchLabels:
               app: svc-analysis-orchestrator
         - ipBlock:
-          cidr: 0.0.0.0/0
+            cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
           port: 5672
