@@ -514,6 +514,8 @@ kind delete cluster
 ---
 
 ## Run Services Outside Kubernetes
+>Note: On Windows, all commands below should be run inside WSL.
+
 **svc-ai-vision-adapter**  
 1. Go to `svc-ai-vision-adapter`-folder and run:  
    Windows:
