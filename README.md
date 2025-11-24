@@ -568,6 +568,18 @@ Default bucket: `trackunit-images` (create it once if missing)
 
 ---
 
+## Run Trackunit Client
+1. Open trackunit-client in Android Studio.  
+2. In the terminal, redirect to `~/Library/Android/sdk/platform-tools`.  
+3. Run:
+   ```bash
+   ./adb reverse tcp:8080 tcp:8080
+   ./adb reverse tcp:9000 tcp:9000
+   ```
+4. Start the app using the `Run` button.
+
+---
+
 ## Run Console Client
 From the `client-console` repository root:
 ```bash
