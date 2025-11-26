@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: svc-analysis-orchestrator
   labels:
-    name: svc-analysis-orchestrator
+    kubernetes.io/metadata.name: svc-analysis-orchestrator

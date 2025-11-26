@@ -47,5 +47,6 @@ secrets/
 kong.yaml
 oauth2-proxy.yaml
 rabbitmq.yaml
-values.yaml
+values*
 generate*
+san.cnf

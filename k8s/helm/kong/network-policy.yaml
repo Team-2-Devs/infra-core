@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: kong
+      app.kubernetes.io/name: kong
   policyTypes:
   - Ingress
   - Egress
@@ -20,23 +20,21 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
-          name: api-gateway
+          kubernetes.io/metadata.name: api-gateway
       podSelector:
         matchLabels:
-          app: oauth2-proxy
+          app.kubernetes.io/name: oauth2-proxy
     ports:
     - protocol: TCP
       port: 4180
+  # Allow reaching kube-apiserver (node IP in Kind)
   - to:
-    - namespaceSelector:
-        matchLabels:
-          name: graph-gateway
-      podSelector:
-        matchLabels:
-          app: graph-gateway
+        - ipBlock:
+            cidr: 172.21.0.0/16
     ports:
-    - protocol: TCP
-      port: 8080
+      - port: 6443
+        protocol: TCP
+  # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
         matchLabels:

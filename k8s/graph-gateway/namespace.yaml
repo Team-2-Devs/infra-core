@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: graph-gateway
   labels:
-    name: graph-gateway
+    kubernetes.io/metadata.name: graph-gateway

@@ -4,16 +4,16 @@ metadata:
   name: graph-gateway
   namespace: graph-gateway
   labels:
-    app: graph-gateway
+    app.kubernetes.io/name: graph-gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: graph-gateway
+      app.kubernetes.io/name: graph-gateway
   template:
     metadata:
       labels:
-        app: graph-gateway
+        app.kubernetes.io/name: graph-gateway
     spec:
       terminationGracePeriodSeconds: 20
       containers:
@@ -26,14 +26,14 @@ spec:
             name: graph-gateway-secret
         readinessProbe:
           httpGet:
-            path: health/ready
+            path: /health/ready
             port: 8080
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 30
         livenessProbe:
           httpGet:
-            path: health/live
+            path: /health/live
             port: 8080
           periodSeconds: 5
           timeoutSeconds: 3

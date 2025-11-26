@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: oauth2-proxy
+      app.kubernetes.io/name: oauth2-proxy
   policyTypes:
   - Ingress
   - Egress
@@ -14,24 +14,25 @@ spec:
     - from:
       - namespaceSelector:
           matchLabels:
-            name: api-gateway
+            kubernetes.io/metadata.name: api-gateway
         podSelector:
           matchLabels:
-            app: kong
-    - ports:
+            app.kubernetes.io/name: kong
+      ports:
       - protocol: TCP
         port: 4180
   egress:
   - to:
     - namespaceSelector:
         matchLabels:
-          name: graph-gateway
+          kubernetes.io/metadata.name: graph-gateway
       podSelector:
         matchLabels:
-          app: graph-gateway
+          app.kubernetes.io/name: graph-gateway
     ports:
     - protocol: TCP
       port: 8080
+  # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
         matchLabels:
@@ -41,6 +42,7 @@ spec:
       port: 53
     - protocol: UDP
       port: 53
+  # External HTTPS (Microsoft Entra (OIDC/JWKS))
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0

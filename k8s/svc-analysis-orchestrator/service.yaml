@@ -5,7 +5,7 @@ metadata:
   namespace: svc-analysis-orchestrator
 spec:
   selector:
-    app: svc-analysis-orchestrator
+    app.kubernetes.io/name: svc-analysis-orchestrator
   ports:
     - protocol: TCP
       port: 8080

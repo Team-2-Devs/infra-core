@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: graph-gateway
+      app.kubernetes.io/name: graph-gateway
   policyTypes:
   - Ingress
   - Egress
@@ -32,6 +32,7 @@ spec:
     ports:
     - protocol: TCP
       port: 5672
+  # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
         matchLabels:
@@ -41,11 +42,10 @@ spec:
       port: 53
     - protocol: UDP
       port: 53
+  # External HTTPS (Microsoft Entra (OIDC/JWKS) + Tailscale funnel)
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
       - protocol: TCP
         port: 443
-      - protocol: TCP
-        port: 5104
