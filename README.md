@@ -452,7 +452,7 @@ Add local DNS entry for graphql.local:
    ```
 9. Create self-signed TLS certificate for graphql.local:
    ```bash
-   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -subj "/CN=graphql.local/O=Trackunit"
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -config helm/kong/san.cnf -extensions req_ext
    ```
 10. Create secret:
     ```bash
@@ -510,7 +510,7 @@ Add local DNS entry for graphql.local:
    ```
 7. Create self-signed TLS certificate for graphql.local:
    ```bash
-   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -subj "/CN=graphql.local/O=Trackunit"
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -config helm/kong/san.cnf -extensions req_ext
    ```
 8. Create secret:
     ```bash

@@ -49,3 +49,4 @@ oauth2-proxy.yaml
 rabbitmq.yaml
 values.yaml
 generate*
+san.cnf
