@@ -548,7 +548,7 @@ Add local DNS entry for graphql.local:
     ```bash
     kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
     ```
-4. Upgrade Kong to enable Ingress Controller mode and TLS:
+4. Install Kong Helm chart with `values.ingress-tls.yaml` to enable Ingress Controller mode and TLS:
    ```bash
    helm install kong kong/kong -n api-gateway -f helm/kong/values.ingress-tls.yaml
    ```
