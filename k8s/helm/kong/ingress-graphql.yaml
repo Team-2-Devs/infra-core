@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-graphql
+  namespace: api-gateway
   annotations:
     konghq.com/strip-path: "false"
     konghq.com/protocols: "https" # restricts route to HTTPS only
@@ -10,8 +11,10 @@ spec:
   tls:
   - hosts:
       - graphql.local
+    secretName: kong-ingress-tls
   rules:
-  - http:
+  - host: graphql.local
+    http:
       paths:
       - path: /graphql
         pathType: Prefix

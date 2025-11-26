@@ -40,7 +40,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 ![Codebase Diagram](docs/images/codebase-architecture.jpg) -->
 
 ---
-
+<!-- 
 ## System Diagram (Simplified)
 ```text
                      ┌──────────────────────┐
@@ -96,7 +96,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 ```
 >Note: Simplified for clarity. Detailed flow described below.
 
----
+--- -->
 
 ## Authentication Flow
 
@@ -110,7 +110,7 @@ Mobile application that uses AI to recognize construction machinery from images 
 4. **GraphGateway** re-validates the JWT and enforces the GraphQL authorization policy `RequireApiScope` on protected fields.
 
 ---
-
+<!-- 
 ## Analysis Flow
 1. **ClientConsole** opens a WebSocket to `/graphql` via Kong Gateway → oauth2-proxy → GraphGateway.  
 2. **ClientConsole** starts a subscription filtered by `correlationId` or prepares to resubscribe once it has one.  
@@ -126,17 +126,17 @@ Mobile application that uses AI to recognize construction machinery from images 
     - `AnalysisCompleted` → triggers `onAnalysisCompleted` subscription.  
 9. **ClientConsole** receives the subscription events over the existing WebSocket and filters by `correlationId` in the event payload to correlate to its request.  
 
----
+--- -->
 
 ## Configuration
-If values and secrets are not yet created:
+<!-- If values and secrets are not yet created:
 1. Navigate to `infra-core/k8s`.  
 2. Download `generate-secrets-and-values.sh` to that directory.  
 3. Run:
    ```bash
    bash generate-secrets-and-values.sh
    ```
-
+ -->
 Add local DNS entry for graphql.local:
 1. Open the hosts file:
    ```bash
@@ -152,7 +152,7 @@ Add local DNS entry for graphql.local:
 --
 
 ## Environment Setup
-**Windows:**
+<!-- **Windows:**
 1. Install WSL (if you don't already have it):
    ```bash
    wsl --install -d Ubuntu
@@ -182,7 +182,7 @@ Add local DNS entry for graphql.local:
    helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
    ```
 
-**MacOS:**
+**MacOS:** -->
 1. Install Homebrew (if you don't already have it):
 2. Install kind, kubectl, and helm:
    ```bash
@@ -227,13 +227,13 @@ Add local DNS entry for graphql.local:
    docker run -d --name=redpanda -p 9092:9092 -p 9644:9644 -v redpanda-data:/var/lib/redpanda/data docker.redpanda.com/redpandadata/redpanda:latest redpanda start --overprovisioned --smp 1 --memory 1G --kafka-addr internal://0.0.0.0:9092 --advertise-kafka-addr internal://100.106.102.107:9092
    ```
 5. Enter Redpanda container:  
-   Windows:
+   <!-- Windows:
    ```bash
    docker exec -it redpanda /bin/bash
    ```
-   MacOS:
+   MacOS: -->
    ```bash
-   docker exec -it bash
+   docker exec -it redpanda /bin/bash
    ```
 6. Inside Redpanda container, create kafka topics:
    ```bash
@@ -245,7 +245,7 @@ Add local DNS entry for graphql.local:
    ```bash
    tailscale funnel 5104
    ```
-   Copy https://<address>.ts.net for later. Let funnel run in the background.
+   Copy https://<address>.ts.net for later.
 
 ---
 
@@ -254,7 +254,7 @@ Add local DNS entry for graphql.local:
 1. Decide value in place of `changeme` and keep it consistent for all future `.env` files:
    ```yaml
    INTERNAL_AUTH_API_KEY: changeme  
-   INGESTION_BASE_URL: "https://<something>.ts.net" # insert funnel address
+   INGESTION_BASE_URL: "https://<address>.ts.net" # insert funnel address
    ```
 
 **svc-messaging-bridge**  
@@ -405,9 +405,9 @@ Add local DNS entry for graphql.local:
    ```yaml
    service-account.json
    ```
-5. Windows only: Open git bash to run command below.  
-6. Copy secret sent through https://eu.onetimesecret.com/ and insert in command below.
-7. Go to `svc-ai-vision-adapter`-folder and run:
+<!-- 5. Windows only: Open git bash to run command below.   -->
+5. Copy secret sent through https://eu.onetimesecret.com/ and insert in command below.
+6. Go to `svc-ai-vision-adapter`-folder and run:
    ```bash
    echo '<secret>' \  | base64 -d > service-account.json
    ```
@@ -415,7 +415,7 @@ Add local DNS entry for graphql.local:
 ---
 
 ## Run Kubernetes Cluster Locally
-**Windows:**
+<!-- **Windows:**
 1. Ensure Docker Desktop is running.  
 2. Determine the path to `infra-core/k8s`. You will need this when switching into WSL.  
 3. Open PowerShell and start WASL:
@@ -482,7 +482,7 @@ Add local DNS entry for graphql.local:
     kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
     ```
 
-**MacOS:**
+**MacOS:** -->
 1. Ensure Docker Desktop is running.  
 2. Navigate to the `infra-core/k8s` directory.  
 3. Create the Kubernetes cluster:
@@ -506,39 +506,57 @@ Add local DNS entry for graphql.local:
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
-   kubectl apply -f helm/kong/ingress-graphql.yaml
    ```
-7. Create self-signed TLS certificate for graphql.local:
-   ```bash
-   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -config helm/kong/san.cnf -extensions req_ext
-   ```
-8. Create secret:
-    ```bash
-    kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
-    ```
-9. Ensure all pods are running before proceeding:
+7. Ensure all pods are running before proceeding:
    ```bash
    kubectl get pods -A --watch
    ```
-10. Apply application manifests:
-    ```bash
-    kubectl apply -f graph-gateway  
-    kubectl apply -f svc-analysis-orchestrator
-    ```
-    *If errors occur, simply run the two commands again. Sometimes manifests are applied out of order, so dependent resources may not exist the first time.*
-11. Verify that all pods are running:
+8. Apply application manifests:
+   ```bash
+   kubectl apply -f graph-gateway  
+   kubectl apply -f svc-analysis-orchestrator
+   ```
+   *If errors occur, simply run the two commands again. Sometimes manifests are applied out of order, so dependent resources may not exist the first time.*
+9. Verify that all pods are running:
     ```bash
     kubectl get pods -A
     ```
-12. Port-forward rabbitmq nodeport:
+10. Port-forward rabbitmq nodeport:
     ```bash
     kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
     ```
-13. Open a new terminal at the project root and start cloud-provider-kind:
+11. Open a new terminal at the project root and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
     This assigns an external IP to the Kong LoadBalancer service that allows it to be accessed from outside the Kubernetes cluster.
+12. (Optional) Start tailscale funnel:
+    ```bash
+    tailscale funnel 5104
+    ```
+    *This is only required if the Kubernetes cluster needs to reach services outside Kubernetes.*
+
+**Enforce TLS**
+1. Create self-signed TLS certificate for graphql.local:
+   ```bash
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -config helm/kong/san.cnf -extensions req_ext
+   ```
+2. Create TLS secret for Kong:
+    ```bash
+    kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
+    ```
+3. Upgrade Kong to enable Ingress Controller mode and TLS:
+   ```bash
+   helm upgrade kong kong/kong -n api-gateway -f helm/kong/values.ingress-tls.yaml
+   ```
+4. Apply ingress:
+   ```bash
+   kubectl apply -f helm/kong/ingress-graphql.yaml
+   ```
+5. Open `Keychain Access`.
+6. Select `System` → `Certificates`.
+7. Drag kong-tls.crt into the certificate list.
+8. Double-click the imported certificate → expand `Trust` → set `When using this certificate` to `Always Trust`.
 
 **Cleanup:**
 Remove the kind cluster:
@@ -549,16 +567,15 @@ kind delete cluster
 ---
 
 ## Run Services Outside Kubernetes
->Note: On Windows, all commands below should be run inside WSL.
-
+<!-- >Note: On Windows, all commands below should be run inside WSL. -->
 **svc-ai-vision-adapter**  
 1. Go to `svc-ai-vision-adapter`-folder and run:  
-   Windows:
+   <!-- Windows:
    ```bash
    $env:GOOGLE_APPLICATION_CREDENTIALS = "$PWD\service-account.json"
    dotnet run
    ```
-   MacOS:
+   MacOS: -->
    ```bash
    export GOOGLE_APPLICATION_CREDENTIALS=service-account.json                                  
    dotnet run
@@ -598,6 +615,7 @@ Default bucket: `trackunit-images` (create it once if missing)
 ---
 
 ## Run Trackunit Client
+>Does **not** support TLS.
 1. Open trackunit-client in Android Studio.  
 2. In the terminal, redirect to `~/Library/Android/sdk/platform-tools`.  
 3. Run:
@@ -610,6 +628,7 @@ Default bucket: `trackunit-images` (create it once if missing)
 ---
 
 ## Run Console Client
+>Supports TLS.
 From the `client-console` repository root:
 ```bash
 dotnet run
@@ -617,7 +636,7 @@ dotnet run
 - Follow the MSAL device-code prompt.
 - Use the console to request an analysis and observe live updates.
 
----
+<!-- ---
 
 ## Messaging: Exchanges & Routing
 
@@ -633,7 +652,7 @@ dotnet run
 
 - **`analysis.completed` (fanout)**
   - **Publisher:** SvcAnalysisOrchestrator
-  - **Consumers:** GraphGateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.completed`)
+  - **Consumers:** GraphGateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.completed`) -->
 
 ---
 
@@ -646,23 +665,53 @@ schema {
   subscription: Subscription
 }
 
-type AnalysisCompleted {
-  correlationId: String!
-  objectKey: String!
-  success: Boolean!
+type AIProviderDto {
+  name: String!
+  apiVersion: String
+  featureset: [String!]!
+  maxResults: Int
 }
 
-type AnalysisRequestPayload {
-  correlationId: String!
+type AnalysisCompleted {
+  success: Boolean!
+  recognitionPayload: RecognitionCompleted
 }
 
 type AnalysisStarted {
-  correlationId: String!
   objectKey: String!
 }
 
+type ConfirmUploadPayload {
+  status: String!
+}
+
+type ImageUploadPayload {
+  uploadId: String!
+  key: String!
+  putUrl: String!
+  expiresAt: DateTime!
+}
+
+type MachineAggregateDto {
+  brand: String
+  type: String
+  model: String
+  confidence: Float!
+  isConfident: Boolean!
+  typeConfidence: Float
+  typeSource: String
+  name: String
+}
+
 type Mutation {
-  requestAnalysis(input: AnalysisRequestInput!): AnalysisRequestPayload!
+  startUpload(filename: String!, contentType: String!): StartUploadPayload!
+    @authorize(policy: "RequireApiScope")
+    @cost(weight: "10")
+  confirmUpload(
+    uploadId: String!
+    bytes: Int!
+    checksum: String!
+  ): ConfirmUploadPayload!
     @authorize(policy: "RequireApiScope")
     @cost(weight: "10")
 }
@@ -671,17 +720,23 @@ type Query {
   ping: String!
 }
 
+type RecognitionCompleted {
+  provider: AIProviderDto!
+  aggregate: MachineAggregateDto!
+}
+
+type StartUploadPayload {
+  correlationId: String!
+  imageUploadPayload: ImageUploadPayload!
+}
+
 type Subscription {
   onAnalysisStarted: AnalysisStarted! @authorize(policy: "RequireApiScope")
   onAnalysisCompleted: AnalysisCompleted! @authorize(policy: "RequireApiScope")
 }
-
-input AnalysisRequestInput {
-  objectKey: String!
-}
 ```
 
----
+<!-- ---
 
 ## Tech & Libraries
 
@@ -689,5 +744,5 @@ input AnalysisRequestInput {
 - **RabbitMQ**
 - **Kong (OSS)** in **db-less** mode
 - **oauth2-proxy** for JWT validation at the edge
-- **Microsoft Entra ID** via **MSAL (device code flow)**
+- **Microsoft Entra ID** via **MSAL (device code flow)** -->
 <!-- - **Docker / Docker Compose** for local orchestration -->
