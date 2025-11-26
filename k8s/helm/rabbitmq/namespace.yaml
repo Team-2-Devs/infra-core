@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: messaging
   labels:
-    name: messaging
+    kubernetes.io/metadata.name: messaging

@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: svc-analysis-orchestrator
+      app.kubernetes.io/name: svc-analysis-orchestrator
   policyTypes:
   - Ingress
   - Egress
@@ -21,7 +21,8 @@ spec:
           app.kubernetes.io/name: rabbitmq
     ports:
     - protocol: TCP
-      port: 5672
+      port: 5672 # AMQP
+  # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
         matchLabels:

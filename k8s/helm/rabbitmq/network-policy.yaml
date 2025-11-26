@@ -14,22 +14,23 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: graph-gateway
+              kubernetes.io/metadata.name: graph-gateway
           podSelector:
             matchLabels:
-              app: graph-gateway
+              app.kubernetes.io/name: graph-gateway
         - namespaceSelector:
             matchLabels:
-              name: svc-analysis-orchestrator
+              kubernetes.io/metadata.name: svc-analysis-orchestrator
           podSelector:
             matchLabels:
-              app: svc-analysis-orchestrator
+              app.kubernetes.io/name: svc-analysis-orchestrator
         - ipBlock:
-            cidr: 0.0.0.0/0
+            cidr: 0.0.0.0/0 # external client (svc-messaging-bridge running on host)
       ports:
         - protocol: TCP
-          port: 5672
+          port: 5672 # AMQP
   egress:
+  # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
         matchLabels:

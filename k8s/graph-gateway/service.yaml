@@ -5,7 +5,7 @@ metadata:
   namespace: graph-gateway
 spec:
   selector:
-    app: graph-gateway
+    app.kubernetes.io/name: graph-gateway
   ports:
     - protocol: TCP
       port: 8080

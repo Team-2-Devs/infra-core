@@ -4,16 +4,16 @@ metadata:
   name: svc-analysis-orchestrator
   namespace: svc-analysis-orchestrator
   labels:
-    app: svc-analysis-orchestrator
+    app.kubernetes.io/name: svc-analysis-orchestrator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: svc-analysis-orchestrator
+      app.kubernetes.io/name: svc-analysis-orchestrator
   template:
     metadata:
       labels:
-        app: svc-analysis-orchestrator
+        app.kubernetes.io/name: svc-analysis-orchestrator
     spec:
       terminationGracePeriodSeconds: 20
       containers:
@@ -26,14 +26,14 @@ spec:
             name: svc-analysis-orchestrator-secret
         readinessProbe:
           httpGet:
-            path: health/ready
+            path: /health/ready
             port: 8080
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 30
         livenessProbe:
           httpGet:
-            path: health/live
+            path: /health/live
             port: 8080
           periodSeconds: 5
           timeoutSeconds: 3
