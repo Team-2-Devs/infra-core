@@ -502,10 +502,9 @@ Add local DNS entry for graphql.local:
 6. Apply foundational manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
-   kubectl apply -f helm/rabbitmq/network-policy.yaml  
-   kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
+   kubectl apply -f helm/rabbitmq/network-policy.yaml  
    ```
 7. Ensure all pods are running before proceeding:
    ```bash
@@ -537,26 +536,30 @@ Add local DNS entry for graphql.local:
     *This is only required if the Kubernetes cluster needs to reach services outside Kubernetes.*
 
 **Enforce TLS**
-1. Create self-signed TLS certificate for graphql.local:
+1. Uninstall existing Kong deployment:
+   ```bash
+   helm uninstall kong -n api-gateway
+   ```
+2. Create self-signed TLS certificate for graphql.local:
    ```bash
    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -config helm/kong/san.cnf -extensions req_ext
    ```
-2. Create TLS secret for Kong:
+3. Create TLS secret for Kong:
     ```bash
     kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
     ```
-3. Upgrade Kong to enable Ingress Controller mode and TLS:
+4. Upgrade Kong to enable Ingress Controller mode and TLS:
    ```bash
-   helm upgrade kong kong/kong -n api-gateway -f helm/kong/values.ingress-tls.yaml
+   helm install kong kong/kong -n api-gateway -f helm/kong/values.ingress-tls.yaml
    ```
-4. Apply ingress:
+5. Apply ingress:
    ```bash
    kubectl apply -f helm/kong/ingress-graphql.yaml
    ```
-5. Open `Keychain Access`.
-6. Select `System` → `Certificates`.
-7. Drag kong-tls.crt into the certificate list.
-8. Double-click the imported certificate → expand `Trust` → set `When using this certificate` to `Always Trust`.
+6. Open `Keychain Access`.
+7. Select `System` → `Certificates`.
+8. Drag kong-tls.crt into the certificate list.
+9. Double-click the imported certificate → expand `Trust` → set `When using this certificate` to `Always Trust`.
 
 **Cleanup:**  
 Remove the kind cluster:

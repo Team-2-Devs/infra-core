@@ -27,6 +27,25 @@ spec:
     ports:
     - protocol: TCP
       port: 4180
+  # Allow intra-pod communication (proxy <-> ingress-controller)
+  - to:
+    - ipBlock:
+        cidr: 192.168.0.0/16 # Calico pod network
+    ports:
+      - protocol: TCP
+        port: 8444 # Kong Admin API
+      - protocol: TCP
+        port: 10254 # ingress-controller health/ready
+      - protocol: TCP
+        port: 8100 # Kong status API
+  # Allow access to Kubernetes API service so
+  # the Kong Ingress Controller can watch resources
+  - to:
+    - ipBlock:
+        cidr: 10.96.0.0/12
+    ports:
+      - protocol: TCP
+        port: 443
   # Allow DNS to CoreDNS in kube-system
   - to:
     - namespaceSelector:
