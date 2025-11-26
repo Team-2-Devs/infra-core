@@ -27,10 +27,10 @@ spec:
     ports:
     - protocol: TCP
       port: 4180
-  # Allow reaching kube-apiserver (node IP in Kind)
+  # Allow reaching kube-apiserver to watch resources
   - to:
         - ipBlock:
-            cidr: 172.21.0.0/16
+            cidr: 172.21.0.0/16 # Kind node network (API server NodePort)
     ports:
       - port: 6443
         protocol: TCP
