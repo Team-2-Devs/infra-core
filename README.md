@@ -448,6 +448,7 @@ Add local DNS entry for graphql.local:
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
+   kubectl apply -f helm/kong/ingress-graphql.yaml
    ```
 9. Create self-signed TLS certificate for graphql.local:
    ```bash
