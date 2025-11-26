@@ -523,14 +523,14 @@ Add local DNS entry for graphql.local:
     ```
 10. Port-forward rabbitmq nodeport:
     ```bash
-    kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
+    kubectl -n messaging port-forward svc/rabbitmq 5672:5672
     ```
-11. Open a new terminal at the project root and start cloud-provider-kind:
+11. Open a new terminal and start cloud-provider-kind:
     ```bash
     sudo go/bin/cloud-provider-kind
     ```
-    This assigns an external IP to the Kong LoadBalancer service that allows it to be accessed from outside the Kubernetes cluster.
-12. (Optional) Start tailscale funnel:
+    *This assigns an external IP to the Kong LoadBalancer service that allows it to be accessed from outside the Kubernetes cluster.*
+12. (Optional) Open a new terminal and start tailscale funnel:
     ```bash
     tailscale funnel 5104
     ```
@@ -558,7 +558,7 @@ Add local DNS entry for graphql.local:
 7. Drag kong-tls.crt into the certificate list.
 8. Double-click the imported certificate → expand `Trust` → set `When using this certificate` to `Always Trust`.
 
-**Cleanup:**
+**Cleanup:**  
 Remove the kind cluster:
 ```bash
 kind delete cluster
