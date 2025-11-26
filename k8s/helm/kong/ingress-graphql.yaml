@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-graphql
+  annotations:
+    konghq.com/strip-path: "false"
+    konghq.com/protocols: "https" # restricts route to HTTPS only
+spec:
+  ingressClassName: kong
+  tls:
+  - hosts:
+      - graphql.local
+  rules:
+  - http:
+      paths:
+      - path: /graphql
+        pathType: Prefix
+        backend:
+          service:
+            name: oauth2-proxy
+            port:
+              number: 4180
