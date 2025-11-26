@@ -137,6 +137,18 @@ If values and secrets are not yet created:
    bash generate-secrets-and-values.sh
    ```
 
+Add local DNS entry for graphql.local:
+1. Open the hosts file:
+   ```bash
+   sudo vim /etc/hosts
+   ```
+2. Add host entry:
+   ```bash
+   172.21.0.4  graphql.local
+   ```
+   Replace `172.21.0.4` with the actual `EXTERNAL-IP` of kong-kong-proxy, available after running local Kubernetes cluster the first time.
+3. Save the file.
+
 --
 
 ## Environment Setup
@@ -437,27 +449,34 @@ If values and secrets are not yet created:
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
    ```
-9. Ensure all pods are running before proceeding:
+9. Create self-signed TLS certificate for graphql.local:
    ```bash
-   kubectl get pods -A --watch
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -subj "/CN=graphql.local/O=Trackunit"
    ```
-10. Apply application manifests:
+10. Create secret:
+    ```bash
+    kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
+    ```
+11. Ensure all pods are running before proceeding:
+    ```bash
+    kubectl get pods -A --watch
+    ```
+12. Apply application manifests:
     ```bash
     kubectl apply -f graph-gateway  
     kubectl apply -f svc-analysis-orchestrator
     ```
     *If errors occur, simply run the two commands again. Sometimes manifests are applied out of order, so dependent resources may not exist the first time.*
-11. Verify that all pods are running:
+13. Verify that all pods are running:
     ```bash
     kubectl get pods -A
     ```
-12. Port-forward Kong to your local machine:
+14. Port-forward Kong to your local machine:
     ```bash
     kubectl port-forward -n api-gateway svc/kong-proxy 8080:80
     ```
     This makes Kong accessible at `http://localhost:8080` on your Windows machine, even though Kong is running inside the Kubernetes cluster.
-
-13. Port-forward rabbitmq nodeport in another terminal, also at infra-core/k8s:
+15. Port-forward rabbitmq nodeport in another terminal, also at infra-core/k8s:
     ```bash
     kubectl -n messaging port-forward svc/rabbitmq-nodeport 5672:5672
     ```
@@ -473,20 +492,29 @@ If values and secrets are not yet created:
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
    ```
-7. Install required Helm charts:
+5. Install required Helm charts:
    ```bash
    helm install oauth2-proxy oauth2-proxy/oauth2-proxy --namespace api-gateway --create-namespace -f helm/oauth2-proxy/values.yaml  
    helm install kong kong/kong --namespace api-gateway --create-namespace -f helm/kong/values.yaml  
    helm install rabbitmq oci://registry-1.docker.io/cloudpirates/rabbitmq --namespace messaging --create-namespace -f helm/rabbitmq/values.yaml  
    ```
-8. Apply foundational manifests:
+6. Apply foundational manifests:
    ```bash
    kubectl apply -f helm/oauth2-proxy/secret.yaml  
    kubectl apply -f helm/rabbitmq/network-policy.yaml  
    kubectl apply -f helm/rabbitmq/nodeport.yaml  
    kubectl apply -f helm/oauth2-proxy/network-policy.yaml  
    kubectl apply -f helm/kong/network-policy.yaml  
+   kubectl apply -f helm/kong/ingress-graphql.yaml
    ```
+7. Create self-signed TLS certificate for graphql.local:
+   ```bash
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout helm/kong/kong-tls.key -out helm/kong/kong-tls.crt -subj "/CN=graphql.local/O=Trackunit"
+   ```
+8. Create secret:
+    ```bash
+    kubectl create secret tls kong-ingress-tls --cert=helm/kong/kong-tls.crt --key=helm/kong/kong-tls.key -n api-gateway
+    ```
 9. Ensure all pods are running before proceeding:
    ```bash
    kubectl get pods -A --watch
