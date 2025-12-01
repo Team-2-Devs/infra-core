@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: graph-gateway
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: graph-gateway
@@ -38,3 +38,8 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1

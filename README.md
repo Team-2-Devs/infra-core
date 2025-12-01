@@ -4,33 +4,65 @@ Mobile application that uses AI to recognize construction machinery from images 
 ---
 
 ## System Architecture
+>**Note:** Only components listed under **InfraCore** are deployed in Kubernetes.
+
+### Client Applications
+
+- **[trackunit-client](https://github.com/Team-2-Devs/trackunit-client)**  
+  **Owner:** Eske.  
+  Official client application for the Trackunit project, built in Flutter for mobile. Handles authentication via Microsoft Entra ID and communicates with **graph-gateway** over GraphQL. Supports the `startUpload` and `confirmUpload` mutations and the `onAnalysisStarted` and `onAnalysisCompleted` subscriptions. Used for initiating and performing image uploads to **MinIO** and receiving real-time analysis updates.  
+  Does not support TLS in the local development environment due to Android emulator networking restrictions preventing the mobile client from resolving the local DNS name `graphql.local` and trusting its self-signed certificate without extensive configuration.
+
+- **[client-console](https://github.com/Team-2-Devs/client-console)**  
+  Developer-focused console application used during development. Implements the same authentication flow and supports the same GraphQL mutations and subscriptions as **trackunit-client**.  
+  Retained in the project as a reference client for validating TLS between the client and Kong.  
 
 ### Core Services
 
-- **[GraphGateway](https://github.com/team-2-devs/graph-gateway)**  
-  Microservice serving as the API facade and application gateway for the system. Provides a GraphQL API with queries, mutations, and subscriptions. Publishes `RequestAnalysis` commands to RabbitMQ and forwards `analysis/started` and `analysis/completed` events to the onAnalysisStarted and onAnalysisCompleted GraphQL subscription fields.
+- **[graph-gateway](https://github.com/team-2-devs/graph-gateway)**  
+  Microservice serving as the API facade and application gateway for the system. Provides a GraphQL API with queries, mutations, and subscriptions. Calls REST API `POST /uploads/start` and `POST /uploads/confirm` on **tu-ingestion-service**. Consumes `analysis.started` and `analysis.completed` events from RabbitMQ and forwards corresponding `analysis/started` and `analysis/completed` events to the onAnalysisStarted and onAnalysisCompleted GraphQL subscription fields.  
 
-- **[SvcAnalysisOrchestrator](https://github.com/team-2-devs/svc-analysis-orchestrator)**  
-  Microservice that orchestrates analysis. Consumes `RequestAnalysis` commands from RabbitMQ and publishes `analysis.started` and `analysis.completed` event exchanges.
+- **[svc-analysis-orchestrator](https://github.com/team-2-devs/svc-analysis-orchestrator)**  
+  Microservice that orchestrates analysis. Consumes `tu.image.uploaded` and `tu.recognition.completed` events from RabbitMQ and publishes `analysis.started` and `analysis.completed` events to RabbitMQ.
+  >**Note:** Although **svc-analysis-orchestrator** should be the central entry point for all analysis workflows, the current implementation temporarily allows **svc-ai-vision-adapter** to consume the `tu.image.uploaded` event directly from **tu-ingestion-service**. This was a decision by the team to simplify early development. In a future iteration, the architecture would be expected to align with the intended responsibility boundaries, with **svc-analysis-orchestrator** serving as the sole consumer of the `tu.image.uploaded` event and orchestrating the full analysis pipeline.  
+
+- **[svc-messaging-bridge](https://github.com/team-2-devs/svc-messaging-bridge)**  
+  Microservice that bridges events from Kafka into RabbitMQ. It consumes events from Kafka topics and republishes them (`tu.image.uploaded` and `tu.recognition.completed`) to RabbitMQ. This allows each microservice to interact solely with its own message broker, without needing to manage cross-broker integration or compatibility concerns.
+
+- **[svc-ai-vision-adapter](https://github.com/Team-2-Devs/svc-ai-vision-adapter)**  
+  **Owner:** Marlen. Description from the repository documentation.  
+  A microservice that receives an image via a presigned URL, processes it with AI provider, aggregates the results, and returns a summarized response to the orchestrator.  
+
+- **[tu-ingestion-service](https://github.com/Team-2-Devs/tu-ingestion-service)**  
+  **Owner:** Kenneth. Description from the repository documentation.  
+  A microservice that manages media upload sessions, validates metadata, and requests presigned PUT URLs from Storage for client uploads.
+
+- **[tu-media-access-service](https://github.com/Team-2-Devs/tu-media-access-service)**  
+  **Owner:** Kenneth. Description from the repository documentation.  
+  A microservice that authorizes internal media access and retrieves presigned GET URLs from Storage for downstream consumers.  
+
+- **[tu-storage-service](https://github.com/Team-2-Devs/tu-storage-service)**  
+  **Owner:** Kenneth. Description from the repository documentation.  
+  A microservice that interfaces with object storage to issue presigned PUT/GET URLs and enforce upload and download policies.  
 
 ### Shared Components
 
-- **[Messaging](https://github.com/team-2-devs/messaging)**  
-  NuGet package containing shared `MessageContracts` and reusable RabbitMQ publisher interfaces and implementations.
+- **[messaging](https://github.com/team-2-devs/messaging)**  
+  NuGet package containing shared `MessageContracts` and reusable RabbitMQ and Kafka interfaces and implementations.
 
 ### Infrastructure
 
-- **InfraCore**  
-  Docker Compose-based orchestration environment bundling all services and infrastructure components, including **Kong Gateway**, **oauth2-proxy**, and **RabbitMQ**.
+- **infra-core**  
+  Kubernetes-based orchestration environment bundling microservices and infrastructure components, including **graph-gateway**, **svc-analysis-orchestrator**, **Kong Gateway**, **oauth2-proxy**, and **RabbitMQ**.
 
-- **Kong Gateway**  
-  API Gateway running in db-less mode. Routes `/graphql` requests to **oauth2-proxy**, which validates incoming tokens before forwarding them to **GraphGateway**.
+- **kong-kong**  
+  API Gateway running in db-less mode. Routes `/graphql` requests to **oauth2-proxy**, which validates incoming tokens before forwarding them to **graph-gateway**.
 
 - **oauth2-proxy**  
-  Authentication proxy that validates Bearer tokens (JWT) issued by Microsoft Entra ID.  
-  Only requests with valid tokens are forwarded to **GraphGateway**.
+  Authentication proxy that validates Bearer tokens (JWT) issued by Microsoft Entra ID via OIDC.  
+  Only requests with valid tokens are forwarded to **graph-gateway**.
 
-- **RabbitMQ**  
+- **rabbitmq**  
   Message broker for asynchronous communication.
 
 <!-- ---
@@ -107,9 +139,39 @@ Mobile application that uses AI to recognize construction machinery from images 
 3. **oauth2-proxy** validates the Bearer token against Microsoft Entra ID:
    - Verifies issuer and audience
    - If valid, forwards the request upstream
-4. **GraphGateway** re-validates the JWT and enforces the GraphQL authorization policy `RequireApiScope` on protected fields.
+4. **graph-gateway** re-validates the JWT and enforces the GraphQL authorization policy `RequireApiScope` on protected fields.
 
 ---
+
+## Message Flow
+
+**Image upload**
+
+1. **trackunit-client** sends the `startUpload` mutation to **graph-gateway**.  
+2. **graph-gateway** calls `POST /uploads/start` in **tu-ingestion-service**.  
+3. **tu-ingestion-service** returns a presigned `PutUrl` and an `objectKey`, which **graph-gateway** forwards to **trackunit-client**.  
+4. **trackunit-client** uploads the file directly to **MinIO** using `PutUrl`.  
+5. After the upload completes, **trackunit-client** sends `confirmUpload`, which **graph-gateway** forwards to `POST /uploads/confirm`.  
+6. **tu-ingestion-service** publishes the `tu.image.uploaded` event to Kafka via Redpanda.
+
+> **Note:** The upload flow is intentionally isolated to ensure it operates independently of **svc-analysis-orchestrator**.
+
+**AI image analysis**
+
+1. **svc-ai-vision-adapter** consumes `tu.image.uploaded` from Kafka.  
+2. It retrieves the image from **tu-media-access-service**.  
+3. It analyzes the image using Google Cloud Vision.  
+4. It publishes `tu.recognition.completed` to Kafka.
+
+**Analysis orchestration**
+
+1. **svc-messaging-bridge** consumes `tu.image.uploaded` and republishes it to RabbitMQ exchange `tu.image.uploaded`.  
+2. **svc-analysis-orchestrator** consumes it and emits `AnalysisStarted` to exchange `analysis.started`.  
+3. **graph-gateway** consumes the event and forwards it to **trackunit-client** via the `onAnalysisStarted` subscription.  
+4. **svc-ai-vision-adapter** completes analysis and emits `tu.recognition.completed`.  
+5. **svc-messaging-bridge** republishes it to exchange `tu.recognition.completed`.  
+6. **svc-analysis-orchestrator** consumes it and emits `AnalysisCompleted` to exchange `analysis.completed`.  
+7. **graph-gateway** consumes it and forwards it as `onAnalysisCompleted` to the client.
 <!-- 
 ## Analysis Flow
 1. **ClientConsole** opens a WebSocket to `/graphql` via Kong Gateway → oauth2-proxy → GraphGateway.  
@@ -127,6 +189,11 @@ Mobile application that uses AI to recognize construction machinery from images 
 9. **ClientConsole** receives the subscription events over the existing WebSocket and filters by `correlationId` in the event payload to correlate to its request.  
 
 --- -->
+
+<!-- ## Analysis Flow
+MAKE AFTER DIAGRAMS -->
+
+---
 
 ## Configuration
 <!-- If values and secrets are not yet created:
@@ -618,7 +685,7 @@ Default bucket: `trackunit-images` (create it once if missing)
 ---
 
 ## Run Trackunit Client
->Does **not** support TLS.
+>Does **not** support TLS.  
 1. Open trackunit-client in Android Studio.  
 2. In the terminal, redirect to `~/Library/Android/sdk/platform-tools`.  
 3. Run:
@@ -639,23 +706,30 @@ dotnet run
 - Follow the MSAL device-code prompt.
 - Use the console to request an analysis and observe live updates.
 
-<!-- ---
+---
 
 ## Messaging: Exchanges & Routing
 
-- **`analysis.commands` (direct)**
+<!-- - **`analysis.commands` (direct)**
   - **Routing key:** `analysis.request` (`Routes.RequestAnalysis`)
   - **Queue:** `orchestrator.analysis.commands`
   - **Publisher:** GraphGateway (mutation `RequestAnalysisAsync`)
-  - **Consumer:** SvcAnalysisOrchestrator (worker `RabbitAnalysisWorker`)
+  - **Consumer:** SvcAnalysisOrchestrator (worker `RabbitAnalysisWorker`) -->
+- **`tu.image.uploaded` (fanout)**
+  - **Publisher:** tu-ingestion-service
+  - **Consumers:** svc-analysis-orchestrator (via `svc-messaging-bridge`, queue `orchestrator.image-uploaded`)
+
+- **`tu.recognition.completed` (fanout)**
+  - **Publisher:** svc-ai-vision-adapter
+  - **Consumers:** svc-analysis-orchestrator (via `svc-messaging-bridge`, queue `orchestrator.recognition-completed`)
 
 - **`analysis.started` (fanout)**
-  - **Publisher:** SvcAnalysisOrchestrator
-  - **Consumers:** GraphGateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.started`)
+  - **Publisher:** svc-analysis-orchestrator
+  - **Consumers:** graph-gateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.started`)
 
 - **`analysis.completed` (fanout)**
-  - **Publisher:** SvcAnalysisOrchestrator
-  - **Consumers:** GraphGateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.completed`) -->
+  - **Publisher:** svc-analysis-orchestrator
+  - **Consumers:** graph-gateway (bridges to GraphQL subscriptions via `RabbitToSubscriptions`, queue `graph.subs.completed`)
 
 ---
 
@@ -742,10 +816,11 @@ type Subscription {
 <!-- ---
 
 ## Tech & Libraries
-
-- **.NET 9 / C#**, **HotChocolate GraphQL**
-- **RabbitMQ**
-- **Kong (OSS)** in **db-less** mode
-- **oauth2-proxy** for JWT validation at the edge
-- **Microsoft Entra ID** via **MSAL (device code flow)** -->
+>**Note:** Only included tech & libraries for Kubernetes deployments.
+- **.NET 9 / C#**, **HotChocolate GraphQL**  
+- **RabbitMQ**  
+- **Kong (OSS)** in **db-less** mode  
+- **oauth2-proxy** for OIDC/JWT validation at the edge  
+- **Microsoft Entra ID** via **MSAL (device code flow)**  
+- **Kind** for local Kubernetes   -->
 <!-- - **Docker / Docker Compose** for local orchestration -->
