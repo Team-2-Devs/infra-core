@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: svc-analysis-orchestrator
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: svc-analysis-orchestrator
@@ -38,3 +38,8 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
